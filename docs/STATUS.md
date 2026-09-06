@@ -4,17 +4,17 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 03 implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/03-file-backed-empty-workspace` |
-| Current commit | `HEAD` (branch 03 implementation commit; handoff hash recorded with the worker result). |
+| Status | Branch 04 implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/04-agent-source-update` |
+| Current commit | `HEAD` (branch 04 implementation commit; handoff hash recorded with the worker result). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | [File-backed empty workspace #4](https://github.com/rwasher/mermaid-studio/issues/4). |
+| Tracking issue | [Agent source update #6](https://github.com/rwasher/mermaid-studio/issues/6). |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | `gpt-5.6-luna` medium worker: explicit `--new` and `--file` workspace selection, exclusive empty-file creation, byte-preserving existing-file reads, empty workspace view, initial Mermaid rendering, and headless tests. |
-| Checks | Bundled Python `quick_validate.py` passed; bundled Node `--test` passed (3 tests, including headless SVG, empty creation, byte preservation, and argument rejection); `git diff --check` passed. |
+| Worker changes | `gpt-5.6-luna` medium worker: explicit-file stdin updater, file-backed `/source` polling, in-place diagram rerendering, same-tab navigation-count coverage, and iterative update workflow docs. |
+| Checks | Bundled Python `quick_validate.py` passed; bundled Node `--test test/launcher.test.js` passed (4 tests, including two successive same-tab updates); `git diff --check` passed. The initial unsandboxed run was required because loopback and headless Chrome are blocked by the default sandbox. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/04-agent-source-update` after branch 03 review and merge. |
-| Exact next action | Coordinator reviews the branch 03 commit and recorded checks, then merges it or sends targeted corrections to the same worker. |
+| Next branch | `rwasher/05-split-editor-autosave` after branch 04 review and merge. |
+| Exact next action | Coordinator reviews the branch 04 commit and checks, then merges it or sends targeted corrections to the same worker. |
 
 ## Update protocol
 

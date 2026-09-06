@@ -20,20 +20,36 @@
     <script type="module">
       import mermaid from '/node_modules/mermaid/dist/mermaid.esm.min.mjs';
       mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
-      const source = __MERMAID_SOURCE__;
+      let source = __MERMAID_SOURCE__;
+      let renderNumber = 0;
       const status = document.querySelector('#status');
       const diagram = document.querySelector('#diagram');
-      if (!source.trim()) {
-        status.textContent = 'Empty workspace. Add Mermaid source to the .mmd file to render a diagram.';
-      } else {
+      async function renderSource(nextSource) {
+        source = nextSource;
+        diagram.replaceChildren();
+        if (!source.trim()) {
+          status.textContent = 'Empty workspace. Add Mermaid source to the .mmd file to render a diagram.';
+          return;
+        }
         try {
-          const { svg } = await mermaid.render('mermaid-studio-workspace', source);
+          const { svg } = await mermaid.render(`mermaid-studio-workspace-${renderNumber += 1}`, source);
           diagram.innerHTML = svg;
           status.textContent = 'Workspace rendered.';
         } catch (error) {
           status.textContent = `Unable to render workspace: ${error.message}`;
         }
       }
+      await renderSource(source);
+      setInterval(async () => {
+        try {
+          const response = await fetch('/source', { cache: 'no-store' });
+          if (!response.ok) return;
+          const { source: nextSource } = await response.json();
+          if (nextSource !== source) await renderSource(nextSource);
+        } catch {
+          // A transient poll failure should not disturb the current preview.
+        }
+      }, 250);
     </script>
   </body>
 </html>

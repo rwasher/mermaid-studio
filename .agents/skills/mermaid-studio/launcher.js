@@ -40,7 +40,7 @@ export async function launch({ browserOpener = defaultBrowserOpener, port = 0, f
   } else {
     source = await readFile(selectedPath, 'utf8');
   }
-  const server = createServer({ source });
+  const server = createServer({ source, filePath: selectedPath });
   const address = await listen(server, port);
   const url = `http://127.0.0.1:${address.port}/`;
   try {

@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
 import { launch } from '../.agents/skills/mermaid-studio/launcher.js';
+import { updateSource } from '../.agents/skills/mermaid-studio/update.js';
 
 test('launch uses an injected browser opener and loopback URL', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
@@ -30,7 +31,7 @@ test('new workspace is empty and existing source renders without byte changes', 
   const existing = await launch({ filePath, browserOpener: async () => {} });
   try {
     const page = await browser.newPage();
-    await page.goto(existing.url, { waitUntil: 'networkidle' });
+    await page.goto(existing.url, { waitUntil: 'domcontentloaded' });
     await page.locator('#diagram svg').waitFor();
     assert.equal(await page.locator('#diagram svg').count(), 1);
     assert.match(await page.locator('#diagram').innerText(), /Start/);
@@ -41,7 +42,7 @@ test('new workspace is empty and existing source renders without byte changes', 
     const createdPath = path.join(directory, 'empty.mmd');
     const empty = await launch({ filePath: createdPath, create: true, browserOpener: async () => {} });
     const emptyPage = await browser.newPage();
-    await emptyPage.goto(empty.url, { waitUntil: 'networkidle' });
+    await emptyPage.goto(empty.url, { waitUntil: 'domcontentloaded' });
     assert.equal(await emptyPage.locator('#diagram svg').count(), 0);
     assert.match(await emptyPage.locator('#status').innerText(), /Empty workspace/);
     assert.equal(await readFile(createdPath, 'utf8'), '');
@@ -57,4 +58,36 @@ test('new workspace is empty and existing source renders without byte changes', 
 test('rejects ambiguous and unsafe workspace arguments', async () => {
   await assert.rejects(() => import('../.agents/skills/mermaid-studio/launcher.js').then(({ launch }) => launch()), /--file/);
   await assert.rejects(() => import('../.agents/skills/mermaid-studio/launcher.js').then(({ launch }) => launch({ filePath: 'relative.mmd' })), /absolute local path/);
+});
+
+test('successive agent updates render in the same tab without navigation', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  await writeFile(filePath, 'flowchart LR\n  A[First] --> B[Initial]\n', 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    let navigationCount = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) navigationCount += 1;
+    });
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#diagram svg').waitFor();
+    assert.equal(navigationCount, 1);
+
+    await updateSource(filePath, 'flowchart LR\n  A[First] --> B[Second]\n');
+    await page.waitForFunction(() => document.querySelector('#diagram')?.innerText.includes('Second'));
+    assert.equal(navigationCount, 1);
+
+    await updateSource(filePath, 'flowchart LR\n  A[First] --> B[Third]\n');
+    await page.waitForFunction(() => document.querySelector('#diagram')?.innerText.includes('Third'));
+    assert.equal(navigationCount, 1);
+    assert.equal(await readFile(filePath, 'utf8'), 'flowchart LR\n  A[First] --> B[Third]\n');
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
 });
