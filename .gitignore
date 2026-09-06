@@ -1,0 +1,14 @@
+# Node and build output
+node_modules/
+dist/
+build/
+coverage/
+
+# Local runtime and test artifacts
+.mermaid-studio/
+.playwright/
+test-results/
+
+# Logs and operating-system files
+*.log
+.DS_Store
