@@ -11,7 +11,7 @@ export function revisionForSource(source) {
   return createHash('sha256').update(source, 'utf8').digest('hex');
 }
 
-export function createServer({ source = '', filePath, revision = revisionForSource(source) } = {}) {
+export function createServer({ source = '', filePath, revision = revisionForSource(source), controlToken, onStop } = {}) {
   const server = http.createServer(async (request, response) => {
     const requestedPath = new URL(request.url, 'http://127.0.0.1').pathname;
     if (requestedPath === '/source') {
@@ -112,6 +112,41 @@ export function createServer({ source = '', filePath, revision = revisionForSour
         response.writeHead(404, { 'content-type': 'application/json; charset=utf-8' });
         response.end(JSON.stringify({ error: 'Workspace source is unavailable' }));
       }
+      return;
+    }
+    if (requestedPath === '/health') {
+      let currentSource;
+      try {
+        currentSource = filePath ? await readFile(filePath, 'utf8') : source;
+      } catch {
+        response.writeHead(503, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+        response.end(JSON.stringify({ healthy: false, filePath }));
+        return;
+      }
+      const body = JSON.stringify({ healthy: true, filePath, revision: revisionForSource(currentSource), pid: process.pid });
+      response.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store' });
+      response.end(body);
+      return;
+    }
+    if (requestedPath === '/stop') {
+      if (request.method !== 'POST') {
+        response.writeHead(405, { allow: 'POST', 'content-type': 'application/json; charset=utf-8' });
+        response.end(JSON.stringify({ error: 'Use POST /stop' }));
+        return;
+      }
+      let body = '';
+      request.setEncoding('utf8');
+      for await (const chunk of request) body += chunk;
+      let payload;
+      try { payload = JSON.parse(body); } catch { payload = {}; }
+      if (!controlToken || payload.token !== controlToken) {
+        response.writeHead(403, { 'content-type': 'application/json; charset=utf-8' });
+        response.end(JSON.stringify({ error: 'Invalid lifecycle token' }));
+        return;
+      }
+      response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+      response.end(JSON.stringify({ stopped: true }));
+      onStop?.();
       return;
     }
     const assetPath = requestedPath === '/'

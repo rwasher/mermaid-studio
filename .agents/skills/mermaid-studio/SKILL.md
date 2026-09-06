@@ -24,3 +24,11 @@ printf '%s\n' 'flowchart LR' '  A[Start] --> B[Finish]' | node .agents/skills/me
 For multiline user-requested changes, pass the complete source through standard input (for example, a quoted heredoc). Re-read the revision for each update and stop to report a conflict if the expected revision is stale. The updater requires an existing absolute `.mmd` file; it does not choose a file or open a browser tab. Wait briefly for the preview to reflect each write before sending the next update.
 
 The browser also provides a Mermaid source editor on the left and a rendered preview on the right. The user can edit the source directly; changes render immediately and save to the same selected `.mmd` file after a short debounce. Continue using the bundled updater for agent changes, and allow a brief polling interval for the open preview to reflect each write.
+
+The launcher records lifecycle state separately for each selected path. Launching the same existing workspace again checks its loopback `/health` endpoint and reuses the healthy server, while a stale record is discarded and a fresh server is started. To stop a workspace explicitly, run:
+
+```sh
+node .agents/skills/mermaid-studio/launcher.js --stop /absolute/path/workspace.mmd
+```
+
+The lifecycle record is local to the machine and only reconnects to the selected workspace. Opening the saved URL after a browser restart loads the current source from the selected `.mmd`; separate paths have separate lifecycle records and servers.

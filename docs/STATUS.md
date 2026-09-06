@@ -4,17 +4,19 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 07 render status and error handling is implemented and awaiting coordinator review. |
-| Current branch | `rwasher/07-render-status-and-errors` |
-| Current commit | Branch 07 implementation is based on merged branch 06 commit `b32c5cb`; local work is committed on this branch. |
+| Status | Branch 08 resume and reconnect implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/08-resume-and-reconnect` |
+| Current commit | Branch 08 is based on reviewed local main commit `2e4adfb`; implementation is committed on this branch. |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | Issue #12: render status and errors. |
+| Tracking issue | Issue #14: resume and reconnect lifecycle. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | Branch 07, implemented by a `gpt-5.6-luna` medium worker, keeps the last valid SVG on Mermaid errors, exposes diagnostic status with an accessible live region, marks render state, and ignores stale async render results. Added coverage for invalid retention, valid recovery, and rapid revisions. |
-| Checks | Passed bundled `quick_validate.py`, Node syntax checks, `git diff --check`, and the 10-test headless suite with loopback access. The suite covers browser and agent stale revision cases, matching writes, editor bytes/SVG/no-navigation, two successive agent updates, invalid-source retention and recovery, and rapid render ordering. |
+| Worker changes | Branch 08 adds per-workspace external lifecycle state, health checks, duplicate-start reuse, stale-state recovery, authenticated stop, and independent session records. Focused tests cover healthy reuse, stale recovery, stop, separate sources, and reconnecting a selected workspace. |
+| Checks | Bundled Node syntax checks and `git diff --check` pass. The headless suite is ready; loopback/browser execution requires the host's permitted headless test environment. |
 | Review disposition | Pending coordinator review. |
 | Next branch | `rwasher/08-resume-and-reconnect`. |
-| Exact next action | Coordinator reviews branch 07 and either requests targeted corrections or merges commit `538cb4f` plus the branch 07 implementation commit. |
+| Exact next action | Coordinator reviews the branch 08 commit and either requests targeted corrections or merges it into local main. |
+
+Unresolved risk: lifecycle records are local to the machine and use a temporary directory; an interrupted process can leave a stale record, which the next launch removes after a failed health check. Cross-machine sync remains outside this branch.
 
 ## Update protocol
 
