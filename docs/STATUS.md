@@ -4,17 +4,17 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branches 02–06 are merged; work is paused before branch 07 to preserve the five-hour usage reserve. |
+| Status | Branch 07 render status and error handling is implemented and awaiting coordinator review. |
 | Current branch | `rwasher/07-render-status-and-errors` |
-| Current commit | Branch 06 merged at `b32c5cb`; this branch contains the resume checkpoint. |
+| Current commit | Branch 07 implementation is based on merged branch 06 commit `b32c5cb`; local work is committed on this branch. |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | None yet; create a branch-07 tracking issue when implementation resumes. |
+| Tracking issue | Issue #12: render status and errors. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | Branch 06, implemented by a `gpt-5.6-luna` medium worker, added SHA-256 source revisions, server re-read and 409 conflict responses, browser conflict preservation, revision-aware agent updater/status helper, and stale-write coverage. |
-| Checks | Coordinator independently passed bundled `quick_validate.py`, Node syntax checks, and 8 headless tests, including browser and agent stale revision cases, matching writes, editor bytes/SVG/no-navigation, and two successive agent updates. Loopback/headless browser checks require the approved unsandboxed runtime. |
-| Review disposition | Branch 06 reviewed and merged into `main`; branch 07 is not dispatched. |
-| Next branch | `rwasher/07-render-status-and-errors`. |
-| Exact next action | After the five-hour reset, check usage, create the branch-07 issue, and dispatch one `gpt-5.6-luna` medium worker to add syntax status, diagnostics, last-valid preview, and revision-aware render ordering. |
+| Worker changes | Branch 07, implemented by a `gpt-5.6-luna` medium worker, keeps the last valid SVG on Mermaid errors, exposes diagnostic status with an accessible live region, marks render state, and ignores stale async render results. Added coverage for invalid retention, valid recovery, and rapid revisions. |
+| Checks | Passed bundled `quick_validate.py`, Node syntax checks, `git diff --check`, and the 10-test headless suite with loopback access. The suite covers browser and agent stale revision cases, matching writes, editor bytes/SVG/no-navigation, two successive agent updates, invalid-source retention and recovery, and rapid render ordering. |
+| Review disposition | Pending coordinator review. |
+| Next branch | `rwasher/08-resume-and-reconnect`. |
+| Exact next action | Coordinator reviews branch 07 and either requests targeted corrections or merges commit `538cb4f` plus the branch 07 implementation commit. |
 
 ## Update protocol
 

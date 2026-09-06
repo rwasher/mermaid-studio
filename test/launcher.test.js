@@ -93,6 +93,68 @@ test('successive agent updates render in the same tab without navigation', async
   }
 });
 
+test('invalid source keeps the last valid preview and later valid source recovers', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const sourceA = 'flowchart LR\n  A[Valid A] --> B[Initial]\n';
+  const sourceB = 'flowchart LR\n  A[Invalid B] -->\n';
+  const sourceC = 'flowchart LR\n  A[Valid C] --> B[Recovered]\n';
+  await writeFile(filePath, sourceA, 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#diagram svg').waitFor();
+    const initialSvg = await page.locator('#diagram').innerHTML();
+    const initialRevision = (await readSource(filePath)).revision;
+
+    await updateSource(filePath, sourceB, initialRevision);
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent.startsWith('Unable to render workspace:'));
+    assert.equal(await page.locator('#diagram').innerHTML(), initialSvg);
+    assert.match(await page.locator('#status').innerText(), /Unable to render workspace:/);
+    assert.equal(await page.locator('#status').getAttribute('role'), 'status');
+
+    await updateSource(filePath, sourceC);
+    await page.waitForFunction(() => document.querySelector('#diagram')?.innerText.includes('Recovered'));
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent.startsWith('Workspace'));
+    assert.match(await page.locator('#diagram').innerText(), /Valid C/);
+    assert.doesNotMatch(await page.locator('#status').innerText(), /Unable to render workspace:/);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('rapid source revisions leave the newest render visible', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  await writeFile(filePath, 'flowchart LR\n  A[Initial] --> B[Start]\n', 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#source').waitFor();
+    const revisions = [
+      'flowchart LR\n  A[Rapid one] --> B[One]\n',
+      'flowchart LR\n  A[Rapid two] --> B[Two]\n',
+      'flowchart LR\n  A[Rapid final] --> B[Final]\n',
+    ];
+    for (const nextSource of revisions) await page.locator('#source').fill(nextSource);
+    await page.waitForFunction(() => document.querySelector('#diagram')?.innerText.includes('Rapid final'));
+    assert.doesNotMatch(await page.locator('#diagram').innerText(), /Rapid one|Rapid two/);
+    assert.match(await page.locator('#status').innerText(), /Workspace/);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('editor autosaves source and renders in place without navigation', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
   const filePath = path.join(directory, 'workspace.mmd');
