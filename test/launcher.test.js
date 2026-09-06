@@ -111,6 +111,8 @@ test('editor autosaves source and renders in place without navigation', async ()
     const pageUrl = page.url();
     await page.locator('#diagram svg').waitFor();
     await page.locator('#source').fill(editedSource);
+    await page.waitForTimeout(275);
+    assert.equal(await page.locator('#source').inputValue(), editedSource);
     await page.locator('#status').waitFor({ state: 'visible' });
     await page.waitForFunction(() => document.querySelector('#status')?.textContent === 'Workspace saved and rendered.');
     await page.waitForFunction(async (expected) => (await fetch('/source', { cache: 'no-store' })).json().then(({ source }) => source === expected), editedSource);

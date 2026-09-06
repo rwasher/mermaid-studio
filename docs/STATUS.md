@@ -11,7 +11,7 @@
 | Tracking issue | [Split editor autosave #8](https://github.com/rwasher/mermaid-studio/issues/8). |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
 | Worker changes | `gpt-5.6-luna` medium worker: left source editor, right Mermaid preview, debounced same-file autosave through strict loopback JSON writes, polling-compatible in-place rendering, render ordering protection, and headless editor coverage. |
-| Checks | Bundled Node `--test test/launcher.test.js` passed (5 tests, including editor bytes/SVG/no-navigation and two successive agent updates); `node --check` passed for launcher/server/updater; `git diff --check` passed. The initial sandboxed run was blocked by loopback/headless Chrome permissions, so the final suite used the approved unsandboxed runtime. The available `quick_validate.py` could not run because its Python environment lacks `yaml`. |
+| Checks | Bundled Python `quick_validate.py` passed; bundled Node `--test test/launcher.test.js` passed (5 tests, including the pre-debounce polling regression, editor bytes/SVG/no-navigation, and two successive agent updates); `node --check` passed for launcher/server/updater; `git diff --check` passed. The final browser suite used the approved unsandboxed runtime because loopback/headless Chrome permissions are blocked by the default sandbox. |
 | Review disposition | Pending coordinator review. |
 | Next branch | `rwasher/06-revision-conflict-safety` after branch 05 review and merge. |
 | Exact next action | Coordinator reviews the branch 05 commit and checks, then merges it or sends targeted corrections to the same worker. |
