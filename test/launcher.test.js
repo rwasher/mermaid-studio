@@ -455,6 +455,64 @@ test('browser disables SVG export for invalid Mermaid source', async () => {
   }
 });
 
+test('browser downloads a non-empty PNG matching the rendered diagram dimensions', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const source = 'flowchart LR\n  A[Export current] --> B[PNG diagram]\n';
+  await writeFile(filePath, source, 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#diagram svg').waitFor();
+    assert.equal(await page.locator('#export-png').isEnabled(), true);
+    const expected = await page.locator('#diagram svg').evaluate((svg) => ({
+      width: svg.viewBox.baseVal.width,
+      height: svg.viewBox.baseVal.height,
+      text: svg.textContent,
+    }));
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('#export-png').click();
+    const download = await downloadPromise;
+    assert.equal(download.suggestedFilename(), 'mermaid-diagram.png');
+    const png = await readFile(await download.path());
+    assert.ok(png.length > 1000);
+    assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+    assert.equal(png.toString('ascii', 12, 16), 'IHDR');
+    assert.equal(png.readUInt32BE(16), Math.round(expected.width));
+    assert.equal(png.readUInt32BE(20), Math.round(expected.height));
+    assert.match(expected.text, /Export current/);
+    assert.match(expected.text, /PNG diagram/);
+    assert.equal(await page.locator('#status').innerText(), 'PNG diagram downloaded.');
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('browser disables PNG export for invalid Mermaid source', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  await writeFile(filePath, 'flowchart LR\n  A[Invalid] -->\n', 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent.startsWith('Unable to render workspace:'));
+    assert.equal(await page.locator('#export-png').isDisabled(), true);
+    assert.equal(await page.locator('#diagram svg').count(), 0);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('agent updater rejects a stale expected revision without writing', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
   const filePath = path.join(directory, 'workspace.mmd');

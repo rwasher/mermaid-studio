@@ -4,19 +4,19 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 12 SVG export implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/12-svg-export` |
-| Current commit | Branch 12 implementation commit (based on reviewed local main commit `d3e04a3`). |
+| Status | Branch 13 PNG export implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/13-png-export` |
+| Current commit | Branch 13 implementation commit (based on reviewed local main commit `198f7ba`). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | Issue #22: export the current valid Mermaid preview as SVG. |
+| Tracking issue | Issue #24: export the current valid Mermaid preview as PNG. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | Branch 12 adds a browser SVG export control that serializes the current valid preview SVG, downloads it with safe object URL cleanup, and reports success or failure in the live status region. The control is disabled while rendering is invalid or pending. Focused headless tests cover non-empty current-diagram export and invalid-source blocking. |
-| Checks | Bundled serial headless suite: 20/20 passing; focused SVG tests: 2/2 passing; `git diff --check` passing. Browser checks require the approved environment because sandboxed execution cannot bind loopback. |
+| Worker changes | Branch 13 adds a browser PNG export control that rasterizes the current valid preview SVG at its rendered viewBox dimensions, downloads it, releases object URLs, and reports success or failure in the live status region. The control is disabled while rendering is invalid or pending. Focused headless tests cover non-empty PNG output, valid dimensions, diagram-content proxy checks, and invalid-source blocking. |
+| Checks | Bundled serial headless suite: 22/22 passing; focused PNG tests: 2/2 passing; `git diff --check`: passing. Browser checks require the approved environment because sandboxed execution cannot bind loopback. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/13-png-export`. |
-| Exact next action | Coordinator reviews the branch 12 commit and either requests targeted corrections or merges it into local main. |
+| Next branch | `rwasher/14-clipboard-export`. |
+| Exact next action | Coordinator reviews the branch 13 commit and either requests targeted corrections or merges it into local main. |
 
-Unresolved risk: browser download behavior depends on browser download permissions; download initiation failures are surfaced to the user. PNG export and diagram-image clipboard export remain outside this branch.
+Unresolved risk: browser download behavior depends on browser download permissions; SVGs containing external resources can be rejected by the browser's canvas security model and the export reports that failure. Clipboard export remains outside this branch.
 
 ## Update protocol
 
