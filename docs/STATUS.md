@@ -4,19 +4,19 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 09 source-copy implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/09-source-copy` |
-| Current commit | `79be2cb3dbb121df69bf87c489fef943e1001242` (based on reviewed local main commit `b5947b2`). |
+| Status | Branch 10 file-import implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/10-file-import` |
+| Current commit | Branch 10 implementation commit (based on reviewed local main commit `38219e3`). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | Issue #16: copy complete Mermaid source. |
+| Tracking issue | Issue #18: import an explicit local Mermaid file. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | Branch 09 adds a browser Copy Mermaid source control that writes the editor's active source to `navigator.clipboard` and reports success or failure in the status line. The focused headless test mocks both clipboard outcomes and asserts exact source bytes. |
-| Checks | Bundled Node test suite, syntax checks, and `git diff --check` pass. |
+| Worker changes | Branch 10 adds a browser `.mmd` file control that reads selected file bytes in the browser, sends them through the existing revision-safe workspace save path, updates the source editor, and renders the imported diagram. Unsupported extensions and read failures show a clear error. Focused headless tests cover successful import and error handling. |
+| Checks | Bundled Node test suite and `git diff --check`; sandboxed test execution is blocked from binding loopback, so the suite must be rerun with the approved headless test environment. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/10-file-import`. |
-| Exact next action | Coordinator reviews the branch 09 commit and either requests targeted corrections or merges it into local main. |
+| Next branch | `rwasher/11-paste-import`. |
+| Exact next action | Coordinator reviews the branch 10 commit and either requests targeted corrections or merges it into local main. |
 
-Unresolved risk: clipboard writes depend on the browser's permission and secure-context policy; a denied or unavailable clipboard is surfaced to the user. Diagram-image clipboard export remains outside this branch.
+Unresolved risk: browser file selection exposes file bytes to the page but never uses the selected local path as a writable workspace path; imported contents still use the active workspace revision and can surface a save conflict. Paste import and diagram-image clipboard export remain outside this branch.
 
 ## Update protocol
 

@@ -296,6 +296,55 @@ test('browser copies the active Mermaid source and reports clipboard failures', 
   }
 });
 
+test('browser imports a selected Mermaid file into the active workspace and preview', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const importPath = path.join(directory, 'selected.mmd');
+  const source = 'flowchart LR\n  A[Imported] --> B[Preview]\n';
+  await writeFile(filePath, 'flowchart LR\n  A[Original]\n', 'utf8');
+  await writeFile(importPath, source, 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#import-source').setInputFiles(importPath);
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent === 'Mermaid file imported and workspace saved.');
+    assert.equal(await page.locator('#source').inputValue(), source);
+    assert.match(await page.locator('#diagram').innerHTML(), /Imported/);
+    assert.equal(await readFile(filePath, 'utf8'), source);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('browser reports a clear error when importing a non-Mermaid file', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const importPath = path.join(directory, 'selected.txt');
+  const source = 'flowchart LR\n  A[Original]\n';
+  await writeFile(filePath, source, 'utf8');
+  await writeFile(importPath, 'not a Mermaid workspace', 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#import-source').setInputFiles(importPath);
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent.startsWith('Unable to import Mermaid file:'));
+    assert.equal(await page.locator('#status').innerText(), 'Unable to import Mermaid file: Choose a file ending in .mmd.');
+    assert.equal(await readFile(filePath, 'utf8'), source);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('agent updater rejects a stale expected revision without writing', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
   const filePath = path.join(directory, 'workspace.mmd');
