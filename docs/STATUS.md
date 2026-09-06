@@ -4,17 +4,17 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 02 implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/02-rendering-spike` |
-| Current commit | Branch 01 base `f1d2be3`; branch 02 commit pending. |
+| Status | Branch 03 implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/03-file-backed-empty-workspace` |
+| Current commit | `HEAD` (branch 03 implementation commit; handoff hash recorded with the worker result). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | [Rendering spike #2](https://github.com/rwasher/mermaid-studio/issues/2). |
+| Tracking issue | [File-backed empty workspace #4](https://github.com/rwasher/mermaid-studio/issues/4). |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | `gpt-5.6-luna` medium worker: minimal discoverable skill, loopback server, fixed Mermaid preview, browser opener seam, pinned dependencies, and automated checks. |
-| Checks | `pnpm install` passed with pinned Mermaid 11.17.2 and Playwright 1.63.0; `quick_validate.py` passed; HTTP Mermaid module check returned 200; `PATH=... pnpm test` passed (2 tests, including headless SVG). |
+| Worker changes | `gpt-5.6-luna` medium worker: explicit `--new` and `--file` workspace selection, exclusive empty-file creation, byte-preserving existing-file reads, empty workspace view, initial Mermaid rendering, and headless tests. |
+| Checks | Bundled Python `quick_validate.py` passed; bundled Node `--test` passed (3 tests, including headless SVG, empty creation, byte preservation, and argument rejection); `git diff --check` passed. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/03-file-backed-empty-workspace` after branch 02 review and merge. |
-| Exact next action | Coordinator reviews the branch 02 commit and its recorded checks, then merges it or sends targeted corrections to the same worker. |
+| Next branch | `rwasher/04-agent-source-update` after branch 03 review and merge. |
+| Exact next action | Coordinator reviews the branch 03 commit and recorded checks, then merges it or sends targeted corrections to the same worker. |
 
 ## Update protocol
 

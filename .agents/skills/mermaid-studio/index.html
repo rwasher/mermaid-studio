@@ -8,20 +8,32 @@
       body { font: 16px system-ui, sans-serif; margin: 3rem; color: #172033; }
       main { max-width: 48rem; margin: auto; }
       #diagram { margin-top: 2rem; }
+      #status { color: #536078; }
     </style>
   </head>
   <body>
     <main>
       <h1>Mermaid Studio</h1>
-      <p>A local rendering preview.</p>
+      <p id="status">Loading workspace…</p>
       <div id="diagram" aria-label="Rendered Mermaid diagram"></div>
     </main>
     <script type="module">
       import mermaid from '/node_modules/mermaid/dist/mermaid.esm.min.mjs';
       mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
-      const source = 'flowchart LR\n  A[Start] --> B[Finish]';
-      const { svg } = await mermaid.render('mermaid-studio-example', source);
-      document.querySelector('#diagram').innerHTML = svg;
+      const source = __MERMAID_SOURCE__;
+      const status = document.querySelector('#status');
+      const diagram = document.querySelector('#diagram');
+      if (!source.trim()) {
+        status.textContent = 'Empty workspace. Add Mermaid source to the .mmd file to render a diagram.';
+      } else {
+        try {
+          const { svg } = await mermaid.render('mermaid-studio-workspace', source);
+          diagram.innerHTML = svg;
+          status.textContent = 'Workspace rendered.';
+        } catch (error) {
+          status.textContent = `Unable to render workspace: ${error.message}`;
+        }
+      }
     </script>
   </body>
 </html>

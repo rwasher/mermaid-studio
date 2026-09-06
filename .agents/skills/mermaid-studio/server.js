@@ -6,7 +6,7 @@ import path from 'node:path';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dependencyRoot = path.resolve(root, '../../..');
 
-export function createServer({ port = 0 } = {}) {
+export function createServer({ source = '' } = {}) {
   const server = http.createServer(async (request, response) => {
     const requestedPath = new URL(request.url, 'http://127.0.0.1').pathname;
     const filePath = requestedPath === '/'
@@ -20,9 +20,13 @@ export function createServer({ port = 0 } = {}) {
       return;
     }
     try {
-      const content = await readFile(filePath);
+      let content = await readFile(filePath, 'utf8');
+      if (requestedPath === '/') {
+        const serializedSource = JSON.stringify(source).replaceAll('<', '\\u003c');
+        content = content.replace('__MERMAID_SOURCE__', serializedSource);
+      }
       const contentType = filePath.endsWith('.mjs') ? 'text/javascript; charset=utf-8' : 'text/html; charset=utf-8';
-      response.writeHead(200, { 'content-type': contentType, 'content-length': content.byteLength });
+      response.writeHead(200, { 'content-type': contentType, 'content-length': Buffer.byteLength(content) });
       response.end(content);
     } catch {
       response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
