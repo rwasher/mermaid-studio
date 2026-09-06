@@ -4,19 +4,19 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 11 paste-import implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/11-paste-import` |
-| Current commit | Branch 11 implementation commit (based on reviewed local main commit `4deabf1`). |
+| Status | Branch 12 SVG export implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/12-svg-export` |
+| Current commit | Branch 12 implementation commit (based on reviewed local main commit `d3e04a3`). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | Issue #20: import Mermaid source from pasted text. |
+| Tracking issue | Issue #22: export the current valid Mermaid preview as SVG. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | Branch 11 adds a browser paste control that reads Mermaid text from the clipboard, replaces the active source through the existing revision-safe save path, updates the source editor, and renders the pasted diagram. Empty clipboard and clipboard-read failures show clear errors. Focused headless tests cover successful paste and empty input. |
-| Checks | Bundled Node test suite and `git diff --check`; headless browser checks require the approved environment because sandboxed execution cannot bind loopback. |
+| Worker changes | Branch 12 adds a browser SVG export control that serializes the current valid preview SVG, downloads it with safe object URL cleanup, and reports success or failure in the live status region. The control is disabled while rendering is invalid or pending. Focused headless tests cover non-empty current-diagram export and invalid-source blocking. |
+| Checks | Bundled serial headless suite: 20/20 passing; focused SVG tests: 2/2 passing; `git diff --check` passing. Browser checks require the approved environment because sandboxed execution cannot bind loopback. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/12-svg-export`. |
-| Exact next action | Coordinator reviews the branch 11 commit and either requests targeted corrections or merges it into local main. |
+| Next branch | `rwasher/13-png-export`. |
+| Exact next action | Coordinator reviews the branch 12 commit and either requests targeted corrections or merges it into local main. |
 
-Unresolved risk: browser clipboard reads depend on browser permission and secure context policy; a denied read is surfaced to the user. Pasted contents use the active workspace revision and can surface a save conflict. SVG/PNG export and diagram-image clipboard export remain outside this branch.
+Unresolved risk: browser download behavior depends on browser download permissions; download initiation failures are surfaced to the user. PNG export and diagram-image clipboard export remain outside this branch.
 
 ## Update protocol
 

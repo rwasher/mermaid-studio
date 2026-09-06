@@ -404,6 +404,57 @@ test('browser reports a clear error when importing a non-Mermaid file', async ()
   }
 });
 
+test('browser downloads the current rendered diagram as a non-empty SVG', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const source = 'flowchart LR\n  A[Export current] --> B[SVG diagram]\n';
+  await writeFile(filePath, source, 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#diagram svg').waitFor();
+    await page.locator('#export-svg').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#export-svg').isEnabled(), true);
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('#export-svg').click();
+    const download = await downloadPromise;
+    assert.equal(download.suggestedFilename(), 'mermaid-diagram.svg');
+    const exportedSvg = await readFile(await download.path(), 'utf8');
+    assert.ok(exportedSvg.length > 0);
+    assert.match(exportedSvg, /<svg[\s>]/);
+    assert.match(exportedSvg, /Export current/);
+    assert.match(exportedSvg, /SVG diagram/);
+    assert.equal(await page.locator('#status').innerText(), 'SVG diagram downloaded.');
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('browser disables SVG export for invalid Mermaid source', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  await writeFile(filePath, 'flowchart LR\n  A[Invalid] -->\n', 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent.startsWith('Unable to render workspace:'));
+    assert.equal(await page.locator('#export-svg').isDisabled(), true);
+    assert.equal(await page.locator('#diagram svg').count(), 0);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('agent updater rejects a stale expected revision without writing', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
   const filePath = path.join(directory, 'workspace.mmd');
