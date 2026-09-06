@@ -27,6 +27,8 @@ The browser also provides a Mermaid source editor on the left and a rendered pre
 
 Use the `Copy Mermaid source` control beneath the editor to copy the complete active source text to the browser clipboard. The status line reports whether the browser accepted or rejected the copy request.
 
+Use the `Paste Mermaid source` control beneath the editor to read Mermaid text from the browser clipboard, replace the active source, render it, and save it to the selected `.mmd` file. The status line reports an empty clipboard, denied clipboard access, or a revision conflict without discarding the current local text.
+
 The launcher records lifecycle state separately for each selected path. Launching the same existing workspace again checks its loopback `/health` endpoint and reuses the healthy server, while a stale record is discarded and a fresh server is started. To stop a workspace explicitly, run:
 
 ```sh

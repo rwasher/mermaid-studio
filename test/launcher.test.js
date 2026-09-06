@@ -296,6 +296,65 @@ test('browser copies the active Mermaid source and reports clipboard failures', 
   }
 });
 
+test('browser pastes Mermaid source into the active workspace and preview', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const source = 'flowchart LR\n  A[Pasted] --> B[Preview]\n';
+  await writeFile(filePath, 'flowchart LR\n  A[Original]\n', 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.addInitScript((value) => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { readText: async () => value },
+      });
+    }, source);
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#paste-source').click();
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent === 'Mermaid source pasted and workspace saved.');
+    assert.equal(await page.locator('#source').inputValue(), source);
+    assert.match(await page.locator('#diagram').innerText(), /Pasted/);
+    assert.match(await page.locator('#diagram').innerText(), /Preview/);
+    assert.equal(await readFile(filePath, 'utf8'), source);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('browser reports an empty clipboard without replacing the active source', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const source = 'flowchart LR\n  A[Original]\n';
+  await writeFile(filePath, source, 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { readText: async () => '' },
+      });
+    });
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#paste-source').click();
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent === 'Unable to paste Mermaid source: Clipboard is empty.');
+    assert.equal(await page.locator('#status').getAttribute('data-state'), 'error');
+    assert.equal(await page.locator('#source').inputValue(), source);
+    assert.equal(await readFile(filePath, 'utf8'), source);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('browser imports a selected Mermaid file into the active workspace and preview', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
   const filePath = path.join(directory, 'workspace.mmd');

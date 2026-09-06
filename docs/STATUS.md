@@ -4,19 +4,19 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 10 file-import implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/10-file-import` |
-| Current commit | Branch 10 implementation commit (based on reviewed local main commit `38219e3`). |
+| Status | Branch 11 paste-import implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/11-paste-import` |
+| Current commit | Branch 11 implementation commit (based on reviewed local main commit `4deabf1`). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | Issue #18: import an explicit local Mermaid file. |
+| Tracking issue | Issue #20: import Mermaid source from pasted text. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | Branch 10 adds a browser `.mmd` file control that reads selected file bytes in the browser, sends them through the existing revision-safe workspace save path, updates the source editor, and renders the imported diagram. Unsupported extensions and read failures show a clear error. Focused headless tests cover successful import and error handling. |
-| Checks | Bundled Node test suite and `git diff --check`; sandboxed test execution is blocked from binding loopback, so the suite must be rerun with the approved headless test environment. |
+| Worker changes | Branch 11 adds a browser paste control that reads Mermaid text from the clipboard, replaces the active source through the existing revision-safe save path, updates the source editor, and renders the pasted diagram. Empty clipboard and clipboard-read failures show clear errors. Focused headless tests cover successful paste and empty input. |
+| Checks | Bundled Node test suite and `git diff --check`; headless browser checks require the approved environment because sandboxed execution cannot bind loopback. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/11-paste-import`. |
-| Exact next action | Coordinator reviews the branch 10 commit and either requests targeted corrections or merges it into local main. |
+| Next branch | `rwasher/12-svg-export`. |
+| Exact next action | Coordinator reviews the branch 11 commit and either requests targeted corrections or merges it into local main. |
 
-Unresolved risk: browser file selection exposes file bytes to the page but never uses the selected local path as a writable workspace path; imported contents still use the active workspace revision and can surface a save conflict. Paste import and diagram-image clipboard export remain outside this branch.
+Unresolved risk: browser clipboard reads depend on browser permission and secure context policy; a denied read is surfaced to the user. Pasted contents use the active workspace revision and can surface a save conflict. SVG/PNG export and diagram-image clipboard export remain outside this branch.
 
 ## Update protocol
 

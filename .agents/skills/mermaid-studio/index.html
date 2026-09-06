@@ -11,6 +11,7 @@
       .pane h2 { font-size: 1rem; margin: 0 0 .5rem; }
       #source { box-sizing: border-box; width: 100%; min-height: 24rem; padding: .75rem; font: 0.95rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
       #copy-source { margin-top: .75rem; padding: .5rem .75rem; }
+      #paste-source { margin-top: .75rem; padding: .5rem .75rem; }
       #import-source { margin-top: .75rem; padding: .5rem .75rem; }
       #diagram { min-height: 4rem; overflow: auto; }
       #status { color: #536078; }
@@ -27,6 +28,7 @@
           <h2 id="source-heading">Mermaid source</h2>
           <textarea id="source" spellcheck="false" aria-label="Mermaid source"></textarea>
           <button id="copy-source" type="button">Copy Mermaid source</button>
+          <button id="paste-source" type="button">Paste Mermaid source</button>
           <label for="import-source">Import Mermaid file</label>
           <input id="import-source" type="file" accept=".mmd" aria-label="Import Mermaid file">
         </section>
@@ -53,6 +55,7 @@
       const editor = document.querySelector('#source');
       const diagram = document.querySelector('#diagram');
       const copySource = document.querySelector('#copy-source');
+      const pasteSource = document.querySelector('#paste-source');
       const importSource = document.querySelector('#import-source');
       editor.value = source;
       function setStatus(message, state = 'neutral') {
@@ -131,6 +134,25 @@
         } catch (error) {
           const detail = error?.message ?? String(error);
           setStatus(`Unable to copy Mermaid source: ${detail}`, 'error');
+        }
+      });
+      pasteSource.addEventListener('click', async () => {
+        try {
+          if (!navigator.clipboard?.readText) throw new Error('Clipboard text access is unavailable.');
+          const pastedSource = await navigator.clipboard.readText();
+          if (!pastedSource.trim()) {
+            setStatus('Unable to paste Mermaid source: Clipboard is empty.', 'error');
+            return;
+          }
+          pendingLocalEdit = true;
+          queuedSave = pastedSource;
+          queuedSaveMessage = 'Mermaid source pasted and workspace saved.';
+          await renderSource(pastedSource, true);
+          clearTimeout(saveTimer);
+          void saveSource();
+        } catch (error) {
+          const detail = error?.message ?? String(error);
+          setStatus(`Unable to paste Mermaid source: ${detail}`, 'error');
         }
       });
       importSource.addEventListener('change', async () => {
