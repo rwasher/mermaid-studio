@@ -5,6 +5,66 @@ description: Create a Mermaid diagram by opening a local Mermaid Studio preview 
 
 # Mermaid Studio
 
+## Source contract
+
+The workspace renders with the repository's pinned `mermaid@11.17.2` package. Produce source for that renderer, rather than relying on a Mermaid feature from another version. Keep the first line as one of the supported diagram declarations below, then use the matching syntax throughout the source:
+
+```mermaid
+flowchart LR
+  A[Start] --> B[Finish]
+```
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Studio
+  User->>Studio: Request a diagram
+  Studio-->>User: Rendered preview
+```
+
+```mermaid
+classDiagram
+  class Workspace {
+    +render()
+  }
+  Workspace --> Preview
+```
+
+```mermaid
+stateDiagram-v2
+  [*] --> Draft
+  Draft --> Rendered: valid source
+  Rendered --> [*]
+```
+
+```mermaid
+erDiagram
+  USER ||--o{ REQUEST : creates
+  USER {
+    string name
+  }
+  REQUEST {
+    int id
+  }
+```
+
+```mermaid
+gantt
+  title Delivery plan
+  dateFormat YYYY-MM-DD
+  section Work
+  Draft :done, draft, 2026-01-01, 2d
+  Review :review, after draft, 2d
+```
+
+Use plain ASCII identifiers, quote labels only when the diagram grammar requires it, and put one statement per line. Prefer `flowchart` for ordinary nodes and edges. Do not invent a declaration, mix diagram grammars, or add Markdown fences to the `.mmd` file. For labels containing punctuation, use a node label such as `A["Retry: 2 times"]`; keep edge text short. Keep examples small enough to diagnose when a render fails.
+
+## Render and repair loop
+
+After every agent update, read the current revision and write the complete replacement source with that revision. Wait for the preview status to settle. A successful render reports `Workspace rendered.` or `Workspace saved and rendered.`. If the status begins `Unable to render workspace:`, read the exact status text, correct only the invalid source, and retry from the latest revision. Preserve the user's edits: if the updater reports a revision conflict, re-read `/source`, compare the current source with the requested change, and ask before replacing a newer human edit. Do not keep retrying unchanged invalid source.
+
+When a user gives a natural-language prompt, choose one diagram type, write the smallest valid source that answers it, render it, and then refine labels or relationships in a follow-up revision. Keep the source in the selected `.mmd` file so the user can inspect and edit it.
+
 When a user asks for help creating a Mermaid diagram or visualization, choose one explicit local `.mmd` path and launch the bundled local preview with one of:
 
 ```sh

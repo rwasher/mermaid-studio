@@ -4,19 +4,19 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 14 clipboard export implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/14-clipboard-export` |
-| Current commit | Pending local implementation commit (based on reviewed local main commit `cf27296`). |
+| Status | Branch 15 syntax skill refinement is complete and pending coordinator review. |
+| Current branch | `rwasher/15-syntax-skill-refinement` |
+| Current commit | Pending local implementation commit (based on reviewed local main commit `020c9fc`). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | Issue #26: copy the current valid Mermaid preview as PNG or SVG clipboard data. |
+| Tracking issue | Issue #28: refine Mermaid Studio syntax guidance and renderer-backed acceptance coverage. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | Branch 14 adds Copy PNG and Copy SVG controls. PNG uses a ClipboardItem image/png payload when supported and falls back to the existing PNG download path when rich clipboard support is unavailable; SVG copies serialized SVG text. Existing Mermaid source copying remains available. Export and clipboard controls share render-validity checks and status feedback. Focused mocked clipboard tests cover PNG payloads, SVG text, unavailable rich clipboard fallback, and invalid-state disabling. |
-| Checks | Bundled serial headless suite: 25/25 passing; focused launcher suite: 22/22 passing; `git diff --check`: passing. Browser checks require the approved environment because sandboxed execution cannot bind loopback. |
+| Worker changes | Branch 15 documents the pinned `mermaid@11.17.2` renderer, six concise prompt-ready diagram templates, syntax conventions, and a status/revision-aware repair loop. Acceptance coverage extracts those templates from the skill and renders each through the installed browser bundle. |
+| Checks | Bundled serial headless suite: 26/26 passing; focused syntax acceptance: 1/1 passing; `git diff --check`: passing. Renderer-backed checks require the approved environment because sandboxed execution cannot bind loopback. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/15-syntax-skill-refinement`. |
-| Exact next action | Coordinator reviews the branch 14 commit and either requests targeted corrections or merges it into local main. |
+| Next branch | `rwasher/16-distributable-package`. |
+| Exact next action | Coordinator reviews the branch 15 commit and either requests targeted corrections or merges it into local main. |
 
-Unresolved risk: PNG clipboard support depends on browser permission and ClipboardItem support; the browser downloads the PNG when rich clipboard support is unavailable or denied after encoding. SVGs containing external resources can be rejected by the browser's canvas security model and the export reports that failure. The implementation targets supported macOS browser behavior only.
+Unresolved risk: syntax acceptance is intentionally limited to the six templates documented by the skill and the installed `mermaid@11.17.2`; future renderer upgrades require reviewing the guidance and rerunning the renderer-backed checks. Natural-language requests outside those diagram types still require the agent to choose and validate an appropriate grammar.
 
 ## Update protocol
 
