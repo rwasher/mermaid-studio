@@ -4,17 +4,17 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 04 implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/04-agent-source-update` |
-| Current commit | `HEAD` (branch 04 implementation commit; handoff hash recorded with the worker result). |
+| Status | Branch 05 implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/05-split-editor-autosave` |
+| Current commit | `HEAD` (branch 05 implementation commit; handoff hash recorded with the worker result). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | [Agent source update #6](https://github.com/rwasher/mermaid-studio/issues/6). |
+| Tracking issue | [Split editor autosave #8](https://github.com/rwasher/mermaid-studio/issues/8). |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | `gpt-5.6-luna` medium worker: explicit-file stdin updater, file-backed `/source` polling, in-place diagram rerendering, same-tab navigation-count coverage, and iterative update workflow docs. |
-| Checks | Bundled Python `quick_validate.py` passed; bundled Node `--test test/launcher.test.js` passed (4 tests, including two successive same-tab updates); `git diff --check` passed. The initial unsandboxed run was required because loopback and headless Chrome are blocked by the default sandbox. |
+| Worker changes | `gpt-5.6-luna` medium worker: left source editor, right Mermaid preview, debounced same-file autosave through strict loopback JSON writes, polling-compatible in-place rendering, render ordering protection, and headless editor coverage. |
+| Checks | Bundled Node `--test test/launcher.test.js` passed (5 tests, including editor bytes/SVG/no-navigation and two successive agent updates); `node --check` passed for launcher/server/updater; `git diff --check` passed. The initial sandboxed run was blocked by loopback/headless Chrome permissions, so the final suite used the approved unsandboxed runtime. The available `quick_validate.py` could not run because its Python environment lacks `yaml`. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/05-split-editor-autosave` after branch 04 review and merge. |
-| Exact next action | Coordinator reviews the branch 04 commit and checks, then merges it or sends targeted corrections to the same worker. |
+| Next branch | `rwasher/06-revision-conflict-safety` after branch 05 review and merge. |
+| Exact next action | Coordinator reviews the branch 05 commit and checks, then merges it or sends targeted corrections to the same worker. |
 
 ## Update protocol
 

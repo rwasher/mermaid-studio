@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { open, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -13,6 +13,68 @@ export function createServer({ source = '', filePath } = {}) {
       if (!filePath) {
         response.writeHead(404, { 'content-type': 'application/json; charset=utf-8' });
         response.end(JSON.stringify({ error: 'Workspace source is unavailable' }));
+        return;
+      }
+      if (request.method === 'POST') {
+        if (request.headers['content-type']?.split(';', 1)[0].trim().toLowerCase() !== 'application/json') {
+          response.writeHead(415, { 'content-type': 'application/json; charset=utf-8' });
+          response.end(JSON.stringify({ error: 'Expected application/json request' }));
+          return;
+        }
+        let body = '';
+        let tooLarge = false;
+        request.setEncoding('utf8');
+        for await (const chunk of request) {
+          body += chunk;
+          if (Buffer.byteLength(body) > 1_000_000) {
+            tooLarge = true;
+            break;
+          }
+        }
+        if (tooLarge) {
+          response.writeHead(413, { 'content-type': 'application/json; charset=utf-8' });
+          response.end(JSON.stringify({ error: 'Source request is too large' }));
+          return;
+        }
+        let payload;
+        try {
+          payload = JSON.parse(body);
+        } catch {
+          response.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+          response.end(JSON.stringify({ error: 'Request body must be valid JSON' }));
+          return;
+        }
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload)
+          || Object.keys(payload).length !== 1 || !Object.hasOwn(payload, 'source')
+          || typeof payload.source !== 'string') {
+          response.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+          response.end(JSON.stringify({ error: 'Request body must contain only a string source field' }));
+          return;
+        }
+        try {
+          const handle = await open(filePath, 'r+');
+          try {
+            await handle.truncate(0);
+            await handle.writeFile(payload.source, 'utf8');
+          } finally {
+            await handle.close();
+          }
+          const result = JSON.stringify({ source: payload.source });
+          response.writeHead(200, {
+            'content-type': 'application/json; charset=utf-8',
+            'content-length': Buffer.byteLength(result),
+            'cache-control': 'no-store',
+          });
+          response.end(result);
+        } catch {
+          response.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+          response.end(JSON.stringify({ error: 'Workspace source could not be saved' }));
+        }
+        return;
+      }
+      if (request.method !== 'GET') {
+        response.writeHead(405, { allow: 'GET, POST', 'content-type': 'application/json; charset=utf-8' });
+        response.end(JSON.stringify({ error: 'Use GET or POST /source' }));
         return;
       }
       try {

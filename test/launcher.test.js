@@ -91,3 +91,39 @@ test('successive agent updates render in the same tab without navigation', async
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('editor autosaves source and renders in place without navigation', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const initialSource = 'flowchart LR\n  A[Start] --> B[Initial]\n';
+  const editedSource = 'flowchart LR\n  A[Start] --> B[Edited]\n';
+  await writeFile(filePath, initialSource, 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    let navigationCount = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) navigationCount += 1;
+    });
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    const pageUrl = page.url();
+    await page.locator('#diagram svg').waitFor();
+    await page.locator('#source').fill(editedSource);
+    await page.locator('#status').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent === 'Workspace saved and rendered.');
+    await page.waitForFunction(async (expected) => (await fetch('/source', { cache: 'no-store' })).json().then(({ source }) => source === expected), editedSource);
+    assert.equal(await readFile(filePath, 'utf8'), editedSource);
+    await page.waitForFunction(() => document.querySelector('#diagram')?.innerText.includes('Edited'));
+    assert.match(await page.locator('#diagram').innerText(), /Edited/);
+    assert.equal(await page.locator('#diagram svg').count(), 1);
+    assert.equal(await page.locator('#source').inputValue(), editedSource);
+    assert.equal(page.url(), pageUrl);
+    assert.equal(navigationCount, 1);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});

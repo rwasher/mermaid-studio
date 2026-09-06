@@ -21,3 +21,5 @@ printf '%s\n' 'flowchart LR' '  A[Start] --> B[Finish]' | node .agents/skills/me
 ```
 
 For multiline user-requested changes, pass the complete source through standard input (for example, a quoted heredoc). Repeat the command with the same path for each update. The updater requires an existing absolute `.mmd` file; it does not choose a file or open a browser tab. Wait briefly for the preview to reflect each write before sending the next update.
+
+The browser also provides a Mermaid source editor on the left and a rendered preview on the right. The user can edit the source directly; changes render immediately and save to the same selected `.mmd` file after a short debounce. Continue using the bundled updater for agent changes, and allow a brief polling interval for the open preview to reflect each write.
