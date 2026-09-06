@@ -1,0 +1,12 @@
+{
+  "name": "mermaid-studio-rendering-spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "mermaid": "11.17.2",
+    "playwright-core": "1.63.0"
+  }
+}

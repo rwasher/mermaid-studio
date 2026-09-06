@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mermaid Studio"
+  short_description: "Open a local Mermaid diagram preview"
+  default_prompt: "Help me create a Mermaid diagram."
+policy:
+  allow_implicit_invocation: true

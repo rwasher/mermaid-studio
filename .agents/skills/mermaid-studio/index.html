@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mermaid Studio</title>
+    <style>
+      body { font: 16px system-ui, sans-serif; margin: 3rem; color: #172033; }
+      main { max-width: 48rem; margin: auto; }
+      #diagram { margin-top: 2rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Mermaid Studio</h1>
+      <p>A local rendering preview.</p>
+      <div id="diagram" aria-label="Rendered Mermaid diagram"></div>
+    </main>
+    <script type="module">
+      import mermaid from '/node_modules/mermaid/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
+      const source = 'flowchart LR\n  A[Start] --> B[Finish]';
+      const { svg } = await mermaid.render('mermaid-studio-example', source);
+      document.querySelector('#diagram').innerHTML = svg;
+    </script>
+  </body>
+</html>
