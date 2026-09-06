@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "verify:package": "node scripts/verify-package.mjs"
+    "verify:package": "node scripts/verify-package.mjs",
+    "verify:docs": "node scripts/verify-docs.mjs"
   },
   "dependencies": {
     "mermaid": "11.17.2",
