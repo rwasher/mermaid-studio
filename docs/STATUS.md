@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Planning only; implementation plan awaits user agreement. |
+| Status | Implementation plan agreed by the user; branch 01 is ready to establish `main`. |
 | Current branch | `rwasher/01-initialize-plan` |
 | Current commit | Initial documentation commit on `rwasher/01-initialize-plan`; resolve with `git rev-parse HEAD`. |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
@@ -12,9 +12,9 @@
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
 | Worker changes | Documentation only: README, implementation plan, status protocol, and ignore rules. |
 | Checks | `git diff --check` passed; no tests run (documentation only). |
-| Review disposition | Coordinator reviewed and approved the documentation; user agreement on the plan remains pending. |
+| Review disposition | Coordinator reviewed and approved the documentation; user agreed to the plan. |
 | Next branch | `rwasher/02-rendering-spike`, only after 01 is reviewed and the user agrees to the plan. |
-| Exact next action | Obtain user agreement on the proposed sequence. Then establish `main` at the reviewed branch 01 commit and dispatch branch 02 to one Terra implementer. |
+| Exact next action | Establish and publish `main` at the reviewed branch 01 commit, then dispatch branch 02 to one Terra implementer. |
 
 ## Update protocol
 
