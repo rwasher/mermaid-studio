@@ -5,7 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
 import { launch } from '../.agents/skills/mermaid-studio/launcher.js';
-import { updateSource } from '../.agents/skills/mermaid-studio/update.js';
+import { readSource, RevisionConflictError, updateSource } from '../.agents/skills/mermaid-studio/update.js';
+import { revisionForSource } from '../.agents/skills/mermaid-studio/server.js';
 
 test('launch uses an injected browser opener and loopback URL', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
@@ -126,6 +127,84 @@ test('editor autosaves source and renders in place without navigation', async ()
   } finally {
     workspace.server.close();
     await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('source writes require the current revision and return the updated revision', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const initialSource = 'flowchart LR\n  A[Initial]\n';
+  const newerSource = 'flowchart LR\n  A[Newer]\n';
+  const attemptedSource = 'flowchart LR\n  A[Stale]\n';
+  await writeFile(filePath, initialSource, 'utf8');
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const initial = await (await fetch(`${workspace.url}source`)).json();
+    await writeFile(filePath, newerSource, 'utf8');
+    const conflictResponse = await fetch(`${workspace.url}source`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ source: attemptedSource, revision: initial.revision }),
+    });
+    assert.equal(conflictResponse.status, 409);
+    const conflict = await conflictResponse.json();
+    assert.equal(conflict.source, newerSource);
+    assert.equal(conflict.revision, revisionForSource(newerSource));
+    assert.equal(await readFile(filePath, 'utf8'), newerSource);
+
+    const matchingResponse = await fetch(`${workspace.url}source`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ source: attemptedSource, revision: conflict.revision }),
+    });
+    assert.equal(matchingResponse.status, 200);
+    assert.equal((await matchingResponse.json()).revision, revisionForSource(attemptedSource));
+    assert.equal(await readFile(filePath, 'utf8'), attemptedSource);
+  } finally {
+    workspace.server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('browser preserves local text and reports a stale save conflict', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const initialSource = 'flowchart LR\n  A[Initial]\n';
+  const newerSource = 'flowchart LR\n  A[Newer]\n';
+  const localSource = 'flowchart LR\n  A[Local unsaved]\n';
+  await writeFile(filePath, initialSource, 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#source').waitFor();
+    await page.locator('#source').fill(localSource);
+    await writeFile(filePath, newerSource, 'utf8');
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent.startsWith('Save conflict:'));
+    assert.equal(await page.locator('#source').inputValue(), localSource);
+    assert.equal(await readFile(filePath, 'utf8'), newerSource);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('agent updater rejects a stale expected revision without writing', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const initialSource = 'flowchart LR\n  A[Initial]\n';
+  const newerSource = 'flowchart LR\n  A[Newer]\n';
+  await writeFile(filePath, initialSource, 'utf8');
+  try {
+    const initial = await readSource(filePath);
+    await writeFile(filePath, newerSource, 'utf8');
+    await assert.rejects(() => updateSource(filePath, 'flowchart LR\n  A[Stale]\n', initial.revision), RevisionConflictError);
+    assert.equal(await readFile(filePath, 'utf8'), newerSource);
+  } finally {
     await rm(directory, { recursive: true, force: true });
   }
 });

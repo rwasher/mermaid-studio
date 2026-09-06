@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { open, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { createServer, listen } from './server.js';
+import { createServer, listen, revisionForSource } from './server.js';
 
 export function defaultBrowserOpener(url) {
   return new Promise((resolve, reject) => {
@@ -40,7 +40,7 @@ export async function launch({ browserOpener = defaultBrowserOpener, port = 0, f
   } else {
     source = await readFile(selectedPath, 'utf8');
   }
-  const server = createServer({ source, filePath: selectedPath });
+  const server = createServer({ source, filePath: selectedPath, revision: revisionForSource(source) });
   const address = await listen(server, port);
   const url = `http://127.0.0.1:${address.port}/`;
   try {

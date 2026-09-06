@@ -34,6 +34,7 @@
       import mermaid from '/node_modules/mermaid/dist/mermaid.esm.min.mjs';
       mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
       let source = __MERMAID_SOURCE__;
+      let revision = __MERMAID_REVISION__;
       let renderNumber = 0;
       let renderRequest = 0;
       let saveTimer;
@@ -73,9 +74,15 @@
             const response = await fetch('/source', {
               method: 'POST',
               headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ source: pendingSource }),
+              body: JSON.stringify({ source: pendingSource, revision }),
             });
-            if (!response.ok) throw new Error(`Save failed (${response.status})`);
+            const result = await response.json();
+            if (response.status === 409) {
+              status.textContent = 'Save conflict: the workspace changed elsewhere. Your unsaved text is preserved.';
+              return;
+            }
+            if (!response.ok) throw new Error(result.error ?? `Save failed (${response.status})`);
+            revision = result.revision;
             status.textContent = 'Workspace saved and rendered.';
             if (source === pendingSource && queuedSave === undefined) pendingLocalEdit = false;
           }
@@ -98,9 +105,12 @@
         try {
           const response = await fetch('/source', { cache: 'no-store' });
           if (!response.ok) return;
-          const { source: nextSource } = await response.json();
+          const { source: nextSource, revision: nextRevision } = await response.json();
           if (nextSource !== source && !pendingLocalEdit && !saveInFlight && queuedSave === undefined) {
+            revision = nextRevision;
             await renderSource(nextSource, true);
+          } else if (nextSource === source) {
+            revision = nextRevision;
           }
         } catch {
           // A transient poll failure should not disturb the current preview.

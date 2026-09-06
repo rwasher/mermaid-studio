@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { createHash } from 'node:crypto';
 import { open, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -6,7 +7,11 @@ import path from 'node:path';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dependencyRoot = path.resolve(root, '../../..');
 
-export function createServer({ source = '', filePath } = {}) {
+export function revisionForSource(source) {
+  return createHash('sha256').update(source, 'utf8').digest('hex');
+}
+
+export function createServer({ source = '', filePath, revision = revisionForSource(source) } = {}) {
   const server = http.createServer(async (request, response) => {
     const requestedPath = new URL(request.url, 'http://127.0.0.1').pathname;
     if (requestedPath === '/source') {
@@ -45,21 +50,38 @@ export function createServer({ source = '', filePath } = {}) {
           return;
         }
         if (!payload || typeof payload !== 'object' || Array.isArray(payload)
-          || Object.keys(payload).length !== 1 || !Object.hasOwn(payload, 'source')
-          || typeof payload.source !== 'string') {
+          || Object.keys(payload).length !== 2 || !Object.hasOwn(payload, 'source')
+          || !Object.hasOwn(payload, 'revision') || typeof payload.source !== 'string'
+          || typeof payload.revision !== 'string') {
           response.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
-          response.end(JSON.stringify({ error: 'Request body must contain only a string source field' }));
+          response.end(JSON.stringify({ error: 'Request body must contain only string source and revision fields' }));
           return;
         }
         try {
           const handle = await open(filePath, 'r+');
           try {
+            const currentSource = await handle.readFile('utf8');
+            const currentRevision = revisionForSource(currentSource);
+            if (payload.revision !== currentRevision) {
+              const conflict = JSON.stringify({
+                error: 'Workspace source changed since this revision was read',
+                source: currentSource,
+                revision: currentRevision,
+              });
+              response.writeHead(409, {
+                'content-type': 'application/json; charset=utf-8',
+                'content-length': Buffer.byteLength(conflict),
+                'cache-control': 'no-store',
+              });
+              response.end(conflict);
+              return;
+            }
             await handle.truncate(0);
-            await handle.writeFile(payload.source, 'utf8');
+            await handle.write(payload.source, 0, 'utf8', 0);
           } finally {
             await handle.close();
           }
-          const result = JSON.stringify({ source: payload.source });
+          const result = JSON.stringify({ source: payload.source, revision: revisionForSource(payload.source) });
           response.writeHead(200, {
             'content-type': 'application/json; charset=utf-8',
             'content-length': Buffer.byteLength(result),
@@ -79,7 +101,7 @@ export function createServer({ source = '', filePath } = {}) {
       }
       try {
         const currentSource = await readFile(filePath, 'utf8');
-        const body = JSON.stringify({ source: currentSource });
+        const body = JSON.stringify({ source: currentSource, revision: revisionForSource(currentSource) });
         response.writeHead(200, {
           'content-type': 'application/json; charset=utf-8',
           'content-length': Buffer.byteLength(body),
@@ -106,7 +128,8 @@ export function createServer({ source = '', filePath } = {}) {
       let content = await readFile(assetPath, 'utf8');
       if (requestedPath === '/') {
         const serializedSource = JSON.stringify(source).replaceAll('<', '\\u003c');
-        content = content.replace('__MERMAID_SOURCE__', serializedSource);
+        content = content.replace('__MERMAID_SOURCE__', serializedSource)
+          .replace('__MERMAID_REVISION__', JSON.stringify(revision));
       }
       const contentType = assetPath.endsWith('.mjs') ? 'text/javascript; charset=utf-8' : 'text/html; charset=utf-8';
       response.writeHead(200, { 'content-type': contentType, 'content-length': Buffer.byteLength(content) });

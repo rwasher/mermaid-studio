@@ -4,17 +4,17 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 05 implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/05-split-editor-autosave` |
-| Current commit | `HEAD` (branch 05 implementation commit; handoff hash recorded with the worker result). |
+| Status | Branch 06 implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/06-revision-conflict-safety` |
+| Current commit | `HEAD` (branch 06 implementation commit; handoff hash recorded with the worker result). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | [Split editor autosave #8](https://github.com/rwasher/mermaid-studio/issues/8). |
+| Tracking issue | [Revision conflict safety #10](https://github.com/rwasher/mermaid-studio/issues/10). |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | `gpt-5.6-luna` medium worker: left source editor, right Mermaid preview, debounced same-file autosave through strict loopback JSON writes, polling-compatible in-place rendering, render ordering protection, and headless editor coverage. |
-| Checks | Bundled Python `quick_validate.py` passed; bundled Node `--test test/launcher.test.js` passed (5 tests, including the pre-debounce polling regression, editor bytes/SVG/no-navigation, and two successive agent updates); `node --check` passed for launcher/server/updater; `git diff --check` passed. The final browser suite used the approved unsandboxed runtime because loopback/headless Chrome permissions are blocked by the default sandbox. |
+| Worker changes | `gpt-5.6-luna` medium worker: source revisions from SHA-256 content digests, server re-read and 409 conflict responses, browser conflict preservation, revision-aware agent updater/status helper, and stale-write coverage. |
+| Checks | Bundled Node `--test test/launcher.test.js` passed (8 tests, including browser and agent stale revision cases, matching writes, editor bytes/SVG/no-navigation, and two successive agent updates); `node --check` passed for server/updater; `git diff --check` passed. The final browser suite used the approved unsandboxed runtime because loopback/headless Chrome permissions are blocked by the default sandbox. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/06-revision-conflict-safety` after branch 05 review and merge. |
-| Exact next action | Coordinator reviews the branch 05 commit and checks, then merges it or sends targeted corrections to the same worker. |
+| Next branch | `rwasher/07-render-status-and-errors` after branch 06 review and merge. |
+| Exact next action | Coordinator reviews the branch 06 commit and checks, then merges it or sends targeted corrections to the same worker. |
 
 ## Update protocol
 
