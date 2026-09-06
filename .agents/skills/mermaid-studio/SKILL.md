@@ -74,6 +74,16 @@ node .agents/skills/mermaid-studio/launcher.js --file /absolute/path/existing.mm
 
 `--new` creates an empty file using exclusive creation and opens an empty workspace. `--file` opens an existing `.mmd` without changing its bytes and renders its source on initial page load. The launcher requires exactly one absolute local `.mmd` path and rejects missing, ambiguous, or unsafe arguments. It starts a loopback-only server and opens its URL in the default browser. On a new checkout, install dependencies first with `pnpm install` (or the project's documented pnpm runtime) so the pinned Mermaid renderer is available.
 
+For a clean local install, copy this skill directory (including its `package.json`) to the Codex skills directory and install its pinned renderer once:
+
+```sh
+mkdir -p "$HOME/.codex/skills/mermaid-studio"
+cp -R .agents/skills/mermaid-studio/. "$HOME/.codex/skills/mermaid-studio/"
+npm install --prefix "$HOME/.codex/skills/mermaid-studio" --omit=dev --ignore-scripts
+```
+
+The install contains the Mermaid renderer used by the local HTTP server. Browser rendering uses the existing macOS browser opened by `open`; it does not use Playwright's browser installer or download browser assets at launch. Google Chrome (or another default browser that supports Mermaid's ES modules) must already be installed. To update, repeat the copy and `npm install` commands after reviewing the pinned version. Keep lifecycle records and workspace `.mmd` files outside this installed directory; lifecycle state is stored in the OS temporary directory per selected absolute path.
+
 After launch, keep using the same selected absolute path for agent edits. Read the current source revision before an update, then include that revision when writing so a newer browser edit is reported as a conflict instead of being overwritten:
 
 ```sh

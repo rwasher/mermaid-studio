@@ -4,19 +4,19 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 15 syntax skill refinement is complete and pending coordinator review. |
-| Current branch | `rwasher/15-syntax-skill-refinement` |
-| Current commit | Pending local implementation commit (based on reviewed local main commit `020c9fc`). |
+| Status | Branch 16 distributable package is implemented and pending coordinator review. |
+| Current branch | `rwasher/16-distributable-package` |
+| Current commit | Pending amended local implementation commit (based on reviewed local main commit `a6082d1`). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | Issue #28: refine Mermaid Studio syntax guidance and renderer-backed acceptance coverage. |
+| Tracking issue | Issue #30: package Mermaid Studio as a self-contained local Codex skill. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | Branch 15 documents the pinned `mermaid@11.17.2` renderer, six concise prompt-ready diagram templates, syntax conventions, and a status/revision-aware repair loop. Acceptance coverage extracts those templates from the skill and renders each through the installed browser bundle. |
-| Checks | Bundled serial headless suite: 26/26 passing; focused syntax acceptance: 1/1 passing; `git diff --check`: passing. Renderer-backed checks require the approved environment because sandboxed execution cannot bind loopback. |
+| Worker changes | Branch 16 gives the skill its own runtime manifest and relocatable renderer lookup, documents copy/install/update commands, keeps lifecycle state in the OS temp directory, and adds a staged clean-install check proving launch and renderer serving without a Playwright browser cache or invocation-time browser download. |
+| Checks | `node scripts/verify-package.mjs`: passing in the approved loopback environment; complete browser-render suite: 26/26 passing; `git diff --check`: passing. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/16-distributable-package`. |
-| Exact next action | Coordinator reviews the branch 15 commit and either requests targeted corrections or merges it into local main. |
+| Next branch | `rwasher/17-integration-portability-docs`. |
+| Exact next action | Coordinator reviews the branch 16 commit and either requests targeted corrections or merges it into local main. |
 
-Unresolved risk: syntax acceptance is intentionally limited to the six templates documented by the skill and the installed `mermaid@11.17.2`; future renderer upgrades require reviewing the guidance and rerunning the renderer-backed checks. Natural-language requests outside those diagram types still require the agent to choose and validate an appropriate grammar.
+Unresolved risk: installation still requires a compatible existing macOS browser; this branch intentionally does not publish or download a browser bundle. Future renderer upgrades require reviewing the guidance and rerunning the renderer-backed checks. Natural-language requests outside those diagram types still require the agent to choose and validate an appropriate grammar.
 
 ## Update protocol
 

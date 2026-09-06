@@ -8,4 +8,6 @@ The initial target is macOS with Codex. Portability and team distribution are pl
 
 The fixed-rendering spike is implemented, and the file-backed empty workspace branch is pending review. See [the implementation plan](docs/IMPLEMENTATION_PLAN.md) and [current status](docs/STATUS.md) for progress.
 
+The skill can be installed locally by copying `.agents/skills/mermaid-studio` into `$HOME/.codex/skills/mermaid-studio` and running `npm install --prefix "$HOME/.codex/skills/mermaid-studio" --omit=dev --ignore-scripts`. This installs the pinned Mermaid renderer once; launch uses an existing macOS browser and does not download Playwright browser assets.
+
 License: TBD.

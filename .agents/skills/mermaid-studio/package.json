@@ -1,0 +1,8 @@
+{
+  "name": "mermaid-studio-skill-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "mermaid": "11.17.2"
+  }
+}

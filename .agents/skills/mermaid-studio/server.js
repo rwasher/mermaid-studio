@@ -1,11 +1,25 @@
 import http from 'node:http';
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { open, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const dependencyRoot = path.resolve(root, '../../..');
+const dependencyRoots = [
+  process.env.MERMAID_STUDIO_DEPENDENCY_ROOT,
+  path.resolve(root, 'node_modules'),
+  path.resolve(root, '../../..', 'node_modules'),
+].filter(Boolean).map((candidate) => path.resolve(candidate));
+
+function mermaidAssetPath(requestedPath) {
+  const relativePath = requestedPath.slice('/node_modules/'.length);
+  for (const dependencyRoot of dependencyRoots) {
+    const candidate = path.resolve(dependencyRoot, relativePath);
+    if (candidate.startsWith(`${dependencyRoot}${path.sep}`) && existsSync(candidate)) return candidate;
+  }
+  return null;
+}
 
 export function revisionForSource(source) {
   return createHash('sha256').update(source, 'utf8').digest('hex');
@@ -152,9 +166,9 @@ export function createServer({ source = '', filePath, revision = revisionForSour
     const assetPath = requestedPath === '/'
       ? path.join(root, 'index.html')
       : requestedPath.startsWith('/node_modules/mermaid/')
-        ? path.join(dependencyRoot, requestedPath.slice(1))
+        ? mermaidAssetPath(requestedPath)
         : null;
-    if (!assetPath || !path.resolve(assetPath).startsWith(path.resolve(dependencyRoot)) && requestedPath !== '/') {
+    if (!assetPath && requestedPath !== '/') {
       response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
       response.end('Not found');
       return;

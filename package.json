@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "verify:package": "node scripts/verify-package.mjs"
   },
   "dependencies": {
     "mermaid": "11.17.2",
