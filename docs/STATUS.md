@@ -4,17 +4,17 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 06 implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/06-revision-conflict-safety` |
-| Current commit | `HEAD` (branch 06 implementation commit; handoff hash recorded with the worker result). |
+| Status | Branches 02–06 are merged; work is paused before branch 07 to preserve the five-hour usage reserve. |
+| Current branch | `rwasher/07-render-status-and-errors` |
+| Current commit | Branch 06 merged at `b32c5cb`; this branch contains the resume checkpoint. |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | [Revision conflict safety #10](https://github.com/rwasher/mermaid-studio/issues/10). |
+| Tracking issue | None yet; create a branch-07 tracking issue when implementation resumes. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | `gpt-5.6-luna` medium worker: source revisions from SHA-256 content digests, server re-read and 409 conflict responses, browser conflict preservation, revision-aware agent updater/status helper, and stale-write coverage. |
-| Checks | Bundled Node `--test test/launcher.test.js` passed (8 tests, including browser and agent stale revision cases, matching writes, editor bytes/SVG/no-navigation, and two successive agent updates); `node --check` passed for server/updater; `git diff --check` passed. The final browser suite used the approved unsandboxed runtime because loopback/headless Chrome permissions are blocked by the default sandbox. |
-| Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/07-render-status-and-errors` after branch 06 review and merge. |
-| Exact next action | Coordinator reviews the branch 06 commit and checks, then merges it or sends targeted corrections to the same worker. |
+| Worker changes | Branch 06, implemented by a `gpt-5.6-luna` medium worker, added SHA-256 source revisions, server re-read and 409 conflict responses, browser conflict preservation, revision-aware agent updater/status helper, and stale-write coverage. |
+| Checks | Coordinator independently passed bundled `quick_validate.py`, Node syntax checks, and 8 headless tests, including browser and agent stale revision cases, matching writes, editor bytes/SVG/no-navigation, and two successive agent updates. Loopback/headless browser checks require the approved unsandboxed runtime. |
+| Review disposition | Branch 06 reviewed and merged into `main`; branch 07 is not dispatched. |
+| Next branch | `rwasher/07-render-status-and-errors`. |
+| Exact next action | After the five-hour reset, check usage, create the branch-07 issue, and dispatch one `gpt-5.6-luna` medium worker to add syntax status, diagnostics, last-valid preview, and revision-aware render ordering. |
 
 ## Update protocol
 
