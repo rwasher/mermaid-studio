@@ -10,6 +10,7 @@
       .workspace { display: grid; grid-template-columns: minmax(16rem, 1fr) minmax(16rem, 1fr); gap: 2rem; align-items: start; }
       .pane h2 { font-size: 1rem; margin: 0 0 .5rem; }
       #source { box-sizing: border-box; width: 100%; min-height: 24rem; padding: .75rem; font: 0.95rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+      #copy-source { margin-top: .75rem; padding: .5rem .75rem; }
       #diagram { min-height: 4rem; overflow: auto; }
       #status { color: #536078; }
       #status[data-state="error"] { color: #a12828; }
@@ -24,6 +25,7 @@
         <section class="pane" aria-labelledby="source-heading">
           <h2 id="source-heading">Mermaid source</h2>
           <textarea id="source" spellcheck="false" aria-label="Mermaid source"></textarea>
+          <button id="copy-source" type="button">Copy Mermaid source</button>
         </section>
         <section class="pane" aria-labelledby="preview-heading">
           <h2 id="preview-heading">Preview</h2>
@@ -46,6 +48,7 @@
       const status = document.querySelector('#status');
       const editor = document.querySelector('#source');
       const diagram = document.querySelector('#diagram');
+      const copySource = document.querySelector('#copy-source');
       editor.value = source;
       function setStatus(message, state = 'neutral') {
         status.textContent = message;
@@ -113,6 +116,15 @@
         void renderSource(nextSource);
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => void saveSource(), 250);
+      });
+      copySource.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(editor.value);
+          setStatus('Mermaid source copied to clipboard.', 'success');
+        } catch (error) {
+          const detail = error?.message ?? String(error);
+          setStatus(`Unable to copy Mermaid source: ${detail}`, 'error');
+        }
       });
       await renderSource(source);
       setInterval(async () => {

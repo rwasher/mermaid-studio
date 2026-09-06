@@ -255,6 +255,47 @@ test('browser preserves local text and reports a stale save conflict', async () 
   }
 });
 
+test('browser copies the active Mermaid source and reports clipboard failures', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  const source = 'flowchart LR\n  A[Exact source] --> B[Clipboard]\n';
+  await writeFile(filePath, source, 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const copiedPage = await browser.newPage();
+    await copiedPage.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText: async (value) => { window.__copiedSource = value; } },
+      });
+    });
+    await copiedPage.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await copiedPage.locator('#copy-source').click();
+    await copiedPage.waitForFunction(() => window.__copiedSource !== undefined);
+    assert.equal(await copiedPage.evaluate(() => window.__copiedSource), source);
+    assert.equal(await copiedPage.locator('#status').innerText(), 'Mermaid source copied to clipboard.');
+
+    const failedPage = await browser.newPage();
+    await failedPage.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText: async () => { throw new Error('permission denied'); } },
+      });
+    });
+    await failedPage.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await failedPage.locator('#copy-source').click();
+    await failedPage.waitForFunction(() => document.querySelector('#status')?.textContent.startsWith('Unable to copy Mermaid source:'));
+    assert.equal(await failedPage.locator('#status').getAttribute('data-state'), 'error');
+    assert.match(await failedPage.locator('#status').innerText(), /permission denied/);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('agent updater rejects a stale expected revision without writing', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
   const filePath = path.join(directory, 'workspace.mmd');

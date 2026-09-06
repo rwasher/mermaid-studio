@@ -4,19 +4,19 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 08 resume and reconnect implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/08-resume-and-reconnect` |
-| Current commit | Branch 08 is based on reviewed local main commit `2e4adfb`; implementation is committed on this branch. |
+| Status | Branch 09 source-copy implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/09-source-copy` |
+| Current commit | `79be2cb3dbb121df69bf87c489fef943e1001242` (based on reviewed local main commit `b5947b2`). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | Issue #14: resume and reconnect lifecycle. |
+| Tracking issue | Issue #16: copy complete Mermaid source. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | Branch 08 adds per-workspace external lifecycle state, health checks, duplicate-start reuse, stale-state recovery, authenticated stop, and independent session records. Focused tests cover healthy reuse, stale recovery, stop, separate sources, and reconnecting a selected workspace. |
-| Checks | Bundled Node syntax checks and `git diff --check` pass. The headless suite is ready; loopback/browser execution requires the host's permitted headless test environment. |
+| Worker changes | Branch 09 adds a browser Copy Mermaid source control that writes the editor's active source to `navigator.clipboard` and reports success or failure in the status line. The focused headless test mocks both clipboard outcomes and asserts exact source bytes. |
+| Checks | Bundled Node test suite, syntax checks, and `git diff --check` pass. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/08-resume-and-reconnect`. |
-| Exact next action | Coordinator reviews the branch 08 commit and either requests targeted corrections or merges it into local main. |
+| Next branch | `rwasher/10-file-import`. |
+| Exact next action | Coordinator reviews the branch 09 commit and either requests targeted corrections or merges it into local main. |
 
-Unresolved risk: lifecycle records are local to the machine and use a temporary directory; an interrupted process can leave a stale record, which the next launch removes after a failed health check. Cross-machine sync remains outside this branch.
+Unresolved risk: clipboard writes depend on the browser's permission and secure-context policy; a denied or unavailable clipboard is surfaced to the user. Diagram-image clipboard export remains outside this branch.
 
 ## Update protocol
 

@@ -25,6 +25,8 @@ For multiline user-requested changes, pass the complete source through standard 
 
 The browser also provides a Mermaid source editor on the left and a rendered preview on the right. The user can edit the source directly; changes render immediately and save to the same selected `.mmd` file after a short debounce. Continue using the bundled updater for agent changes, and allow a brief polling interval for the open preview to reflect each write.
 
+Use the `Copy Mermaid source` control beneath the editor to copy the complete active source text to the browser clipboard. The status line reports whether the browser accepted or rejected the copy request.
+
 The launcher records lifecycle state separately for each selected path. Launching the same existing workspace again checks its loopback `/health` endpoint and reuses the healthy server, while a stale record is discarded and a fresh server is started. To stop a workspace explicitly, run:
 
 ```sh
