@@ -6,6 +6,6 @@ The proposed product starts empty, keeps editable Mermaid source beside a live p
 
 The initial target is macOS with Codex. Portability and team distribution are planned after the local workflow is proven.
 
-Implementation has not begun. See [the implementation plan](docs/IMPLEMENTATION_PLAN.md) and [current status](docs/STATUS.md).
+The fixed-rendering spike is implemented, and the file-backed empty workspace branch is pending review. See [the implementation plan](docs/IMPLEMENTATION_PLAN.md) and [current status](docs/STATUS.md) for progress.
 
 License: TBD.
