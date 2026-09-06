@@ -15,6 +15,8 @@
       #import-source { margin-top: .75rem; padding: .5rem .75rem; }
       #export-svg { margin-top: .75rem; padding: .5rem .75rem; }
       #export-png { margin-top: .75rem; padding: .5rem .75rem; }
+      #copy-svg { margin-top: .75rem; padding: .5rem .75rem; }
+      #copy-png { margin-top: .75rem; padding: .5rem .75rem; }
       #diagram { min-height: 4rem; overflow: auto; }
       #status { color: #536078; }
       #status[data-state="error"] { color: #a12828; }
@@ -39,6 +41,8 @@
           <div id="diagram" aria-label="Rendered Mermaid diagram"></div>
           <button id="export-svg" type="button" disabled>Export SVG</button>
           <button id="export-png" type="button" disabled>Export PNG</button>
+          <button id="copy-svg" type="button" disabled>Copy SVG</button>
+          <button id="copy-png" type="button" disabled>Copy PNG</button>
         </section>
       </div>
     </main>
@@ -63,6 +67,8 @@
       const importSource = document.querySelector('#import-source');
       const exportSvg = document.querySelector('#export-svg');
       const exportPng = document.querySelector('#export-png');
+      const copySvg = document.querySelector('#copy-svg');
+      const copyPng = document.querySelector('#copy-png');
       editor.value = source;
       function setStatus(message, state = 'neutral') {
         status.textContent = message;
@@ -71,6 +77,8 @@
       function setExportAvailability(available) {
         exportSvg.disabled = !available;
         exportPng.disabled = !available;
+        copySvg.disabled = !available;
+        copyPng.disabled = !available;
       }
       async function renderSource(nextSource, updateEditor = false) {
         source = nextSource;
@@ -188,25 +196,38 @@
           setStatus(`Unable to import Mermaid file: ${detail}`, 'error');
         }
       });
-      exportSvg.addEventListener('click', () => {
+      function currentRenderedSvg(action) {
         const renderedSvg = diagram.querySelector('svg');
-        if (!renderedSvg || !latestRender.valid || latestRender.source !== source) {
-          setExportAvailability(false);
-          setStatus('Unable to export SVG: Render a valid Mermaid diagram first.', 'error');
-          return;
-        }
-        const objectUrl = URL.createObjectURL(new Blob([renderedSvg.outerHTML], { type: 'image/svg+xml;charset=utf-8' }));
+        if (renderedSvg && latestRender.valid && latestRender.source === source) return renderedSvg;
+        setExportAvailability(false);
+        setStatus(`Unable to ${action}: Render a valid Mermaid diagram first.`, 'error');
+        return null;
+      }
+      function serializedSvg(renderedSvg) {
+        return renderedSvg.outerHTML.includes('xmlns=')
+          ? renderedSvg.outerHTML
+          : renderedSvg.outerHTML.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      function downloadBlob(blob, filename) {
+        const objectUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = objectUrl;
-        link.download = 'mermaid-diagram.svg';
+        link.download = filename;
         try {
           link.click();
+        } finally {
+          setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+        }
+      }
+      exportSvg.addEventListener('click', () => {
+        const renderedSvg = currentRenderedSvg('export SVG');
+        if (!renderedSvg) return;
+        try {
+          downloadBlob(new Blob([serializedSvg(renderedSvg)], { type: 'image/svg+xml;charset=utf-8' }), 'mermaid-diagram.svg');
           setStatus('SVG diagram downloaded.', 'success');
         } catch (error) {
           const detail = error?.message ?? String(error);
           setStatus(`Unable to export SVG: ${detail}`, 'error');
-        } finally {
-          setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
         }
       });
       function svgDimensions(svg) {
@@ -227,46 +248,75 @@
           canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('The browser could not encode the diagram as PNG.')), 'image/png');
         });
       }
-      exportPng.addEventListener('click', async () => {
-        const renderedSvg = diagram.querySelector('svg');
-        if (!renderedSvg || !latestRender.valid || latestRender.source !== source) {
-          setExportAvailability(false);
-          setStatus('Unable to export PNG: Render a valid Mermaid diagram first.', 'error');
-          return;
-        }
-        let pngUrl;
+      async function renderedPngBlob(renderedSvg) {
+        const { width, height } = svgDimensions(renderedSvg);
+        const image = new Image();
+        const loaded = new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = () => reject(new Error('The browser could not load the rendered diagram for PNG export.'));
+        });
+        image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(serializedSvg(renderedSvg))}`;
+        await loaded;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('The browser does not support PNG export.');
+        context.drawImage(image, 0, 0, width, height);
+        return canvasBlob(canvas);
+      }
+      async function copyPngOrDownload() {
+        const renderedSvg = currentRenderedSvg('copy PNG');
+        if (!renderedSvg) return;
+        let pngBlob;
         try {
-          const { width, height } = svgDimensions(renderedSvg);
-          const serializedSvg = renderedSvg.outerHTML.includes('xmlns=')
-            ? renderedSvg.outerHTML
-            : renderedSvg.outerHTML.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-          const image = new Image();
-          const loaded = new Promise((resolve, reject) => {
-            image.onload = resolve;
-            image.onerror = () => reject(new Error('The browser could not load the rendered diagram for PNG export.'));
-          });
-          image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(serializedSvg)}`;
-          await loaded;
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const context = canvas.getContext('2d');
-          if (!context) throw new Error('The browser does not support PNG export.');
-          context.drawImage(image, 0, 0, width, height);
-          const pngBlob = await canvasBlob(canvas);
-          pngUrl = URL.createObjectURL(pngBlob);
-          const link = document.createElement('a');
-          link.href = pngUrl;
-          link.download = 'mermaid-diagram.png';
-          link.click();
+          pngBlob = await renderedPngBlob(renderedSvg);
+          if (!navigator.clipboard?.write || typeof ClipboardItem !== 'function') {
+            downloadBlob(pngBlob, 'mermaid-diagram.png');
+            setStatus('PNG clipboard is unavailable; PNG diagram downloaded instead.', 'success');
+            return;
+          }
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+          setStatus('PNG diagram copied to clipboard.', 'success');
+        } catch (error) {
+          const detail = error?.message ?? String(error);
+          if (pngBlob) {
+            try {
+              downloadBlob(pngBlob, 'mermaid-diagram.png');
+              setStatus(`PNG clipboard unavailable; PNG diagram downloaded instead (${detail}).`, 'success');
+              return;
+            } catch (fallbackError) {
+              setStatus(`Unable to copy or download PNG: ${fallbackError?.message ?? detail}`, 'error');
+              return;
+            }
+          }
+          setStatus(`Unable to export PNG: ${detail}`, 'error');
+        }
+      }
+      exportPng.addEventListener('click', async () => {
+        const renderedSvg = currentRenderedSvg('export PNG');
+        if (!renderedSvg) return;
+        try {
+          downloadBlob(await renderedPngBlob(renderedSvg), 'mermaid-diagram.png');
           setStatus('PNG diagram downloaded.', 'success');
         } catch (error) {
           const detail = error?.message ?? String(error);
           setStatus(`Unable to export PNG: ${detail}`, 'error');
-        } finally {
-          if (pngUrl) setTimeout(() => URL.revokeObjectURL(pngUrl), 0);
         }
       });
+      copySvg.addEventListener('click', async () => {
+        const renderedSvg = currentRenderedSvg('copy SVG');
+        if (!renderedSvg) return;
+        try {
+          if (!navigator.clipboard?.writeText) throw new Error('Clipboard text access is unavailable.');
+          await navigator.clipboard.writeText(serializedSvg(renderedSvg));
+          setStatus('SVG copied to clipboard.', 'success');
+        } catch (error) {
+          const detail = error?.message ?? String(error);
+          setStatus(`Unable to copy SVG: ${detail}`, 'error');
+        }
+      });
+      copyPng.addEventListener('click', () => void copyPngOrDownload());
       await renderSource(source);
       setInterval(async () => {
         try {

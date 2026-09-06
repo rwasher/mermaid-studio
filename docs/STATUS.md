@@ -4,19 +4,19 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Branch 13 PNG export implementation is complete and pending coordinator review. |
-| Current branch | `rwasher/13-png-export` |
-| Current commit | Branch 13 implementation commit (based on reviewed local main commit `198f7ba`). |
+| Status | Branch 14 clipboard export implementation is complete and pending coordinator review. |
+| Current branch | `rwasher/14-clipboard-export` |
+| Current commit | Pending local implementation commit (based on reviewed local main commit `cf27296`). |
 | Repository | Public `rwasher/mermaid-studio`; origin uses GitHub SSH. |
-| Tracking issue | Issue #24: export the current valid Mermaid preview as PNG. |
+| Tracking issue | Issue #26: copy the current valid Mermaid preview as PNG or SVG clipboard data. |
 | Worktree | `/Users/rwasher/dev/mermaid-studio` |
-| Worker changes | Branch 13 adds a browser PNG export control that rasterizes the current valid preview SVG at its rendered viewBox dimensions, downloads it, releases object URLs, and reports success or failure in the live status region. The control is disabled while rendering is invalid or pending. Focused headless tests cover non-empty PNG output, valid dimensions, diagram-content proxy checks, and invalid-source blocking. |
-| Checks | Bundled serial headless suite: 22/22 passing; focused PNG tests: 2/2 passing; `git diff --check`: passing. Browser checks require the approved environment because sandboxed execution cannot bind loopback. |
+| Worker changes | Branch 14 adds Copy PNG and Copy SVG controls. PNG uses a ClipboardItem image/png payload when supported and falls back to the existing PNG download path when rich clipboard support is unavailable; SVG copies serialized SVG text. Existing Mermaid source copying remains available. Export and clipboard controls share render-validity checks and status feedback. Focused mocked clipboard tests cover PNG payloads, SVG text, unavailable rich clipboard fallback, and invalid-state disabling. |
+| Checks | Bundled serial headless suite: 25/25 passing; focused launcher suite: 22/22 passing; `git diff --check`: passing. Browser checks require the approved environment because sandboxed execution cannot bind loopback. |
 | Review disposition | Pending coordinator review. |
-| Next branch | `rwasher/14-clipboard-export`. |
-| Exact next action | Coordinator reviews the branch 13 commit and either requests targeted corrections or merges it into local main. |
+| Next branch | `rwasher/15-syntax-skill-refinement`. |
+| Exact next action | Coordinator reviews the branch 14 commit and either requests targeted corrections or merges it into local main. |
 
-Unresolved risk: browser download behavior depends on browser download permissions; SVGs containing external resources can be rejected by the browser's canvas security model and the export reports that failure. Clipboard export remains outside this branch.
+Unresolved risk: PNG clipboard support depends on browser permission and ClipboardItem support; the browser downloads the PNG when rich clipboard support is unavailable or denied after encoding. SVGs containing external resources can be rejected by the browser's canvas security model and the export reports that failure. The implementation targets supported macOS browser behavior only.
 
 ## Update protocol
 

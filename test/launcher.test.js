@@ -493,6 +493,112 @@ test('browser downloads a non-empty PNG matching the rendered diagram dimensions
   }
 });
 
+test('browser copies PNG as an image and SVG as text through mocked clipboard APIs', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  await writeFile(filePath, 'flowchart LR\n  A[Clipboard image] --> B[Clipboard SVG]\n', 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.ClipboardItem = class MockClipboardItem {
+        constructor(items) { this.items = items; }
+      };
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          write: async (items) => { window.__clipboardItems = items; },
+          writeText: async (value) => { window.__clipboardText = value; },
+        },
+      });
+    });
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#diagram svg').waitFor();
+    await page.locator('#copy-png').click();
+    await page.waitForFunction(() => window.__clipboardItems?.length === 1);
+    const pngClipboard = await page.evaluate(() => {
+      const blob = window.__clipboardItems[0].items['image/png'];
+      return { type: blob.type, size: blob.size };
+    });
+    assert.equal(pngClipboard.type, 'image/png');
+    assert.ok(pngClipboard.size > 1000);
+    assert.equal(await page.locator('#status').innerText(), 'PNG diagram copied to clipboard.');
+
+    await page.locator('#copy-svg').click();
+    await page.waitForFunction(() => typeof window.__clipboardText === 'string');
+    const copiedSvg = await page.evaluate(() => window.__clipboardText);
+    assert.match(copiedSvg, /^<svg[\s>]/);
+    assert.match(copiedSvg, /Clipboard image/);
+    assert.equal(await page.locator('#status').innerText(), 'SVG copied to clipboard.');
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('browser falls back to PNG download when rich clipboard support is unavailable', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  await writeFile(filePath, 'flowchart LR\n  A[Fallback] --> B[Download]\n', 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: {} });
+    });
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#diagram svg').waitFor();
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('#copy-png').click();
+    const download = await downloadPromise;
+    assert.equal(download.suggestedFilename(), 'mermaid-diagram.png');
+    assert.ok((await readFile(await download.path())).length > 1000);
+    assert.equal(await page.locator('#status').innerText(), 'PNG clipboard is unavailable; PNG diagram downloaded instead.');
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('browser falls back to PNG download when clipboard permission is denied', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
+  const filePath = path.join(directory, 'workspace.mmd');
+  await writeFile(filePath, 'flowchart LR\n  A[Permission] --> B[Denied]\n', 'utf8');
+  const executablePath = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const browser = await chromium.launch({ executablePath, headless: true });
+  const workspace = await launch({ filePath, browserOpener: async () => {} });
+  try {
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.ClipboardItem = class MockClipboardItem {
+        constructor(items) { this.items = items; }
+      };
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { write: async () => { throw new Error('permission denied'); } },
+      });
+    });
+    await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#diagram svg').waitFor();
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('#copy-png').click();
+    const download = await downloadPromise;
+    assert.equal(download.suggestedFilename(), 'mermaid-diagram.png');
+    assert.ok((await readFile(await download.path())).length > 1000);
+    assert.match(await page.locator('#status').innerText(), /^PNG clipboard unavailable; PNG diagram downloaded instead \(permission denied\)\.$/);
+  } finally {
+    workspace.server.close();
+    await browser.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('browser disables PNG export for invalid Mermaid source', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'mermaid-studio-'));
   const filePath = path.join(directory, 'workspace.mmd');
@@ -505,6 +611,8 @@ test('browser disables PNG export for invalid Mermaid source', async () => {
     await page.goto(workspace.url, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.querySelector('#status')?.textContent.startsWith('Unable to render workspace:'));
     assert.equal(await page.locator('#export-png').isDisabled(), true);
+    assert.equal(await page.locator('#copy-png').isDisabled(), true);
+    assert.equal(await page.locator('#copy-svg').isDisabled(), true);
     assert.equal(await page.locator('#diagram svg').count(), 0);
   } finally {
     workspace.server.close();
